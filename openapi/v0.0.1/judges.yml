@@ -12,7 +12,7 @@ info:
     email: api@hmcts.com
   license:
     name: MIT
-    url: 'https://raw.githubusercontent.com/hmcts/api-cp-refdata-courthearing-courthouses/refs/heads/master/LICENSE'
+    url: 'https://cdn.jsdelivr.net/gh/hmcts/api-cp-refdata-courthearing-courthouses/refs/heads/master/LICENSE'
 
 paths:
   /judges/{judge_id}:
@@ -34,7 +34,7 @@ paths:
           content:
             application/json:
               schema:
-                  $ref: "https://raw.githubusercontent.com/hmcts/api-cp-refdata-courthearing-judges/refs/heads/master/openapi/v0.0.1/judges.schema.json"
+                  $ref: "https://cdn.jsdelivr.net/gh/hmcts/api-cp-refdata-courthearing-judges/refs/heads/master/openapi/v0.0.1/judges.schema.json"
               example:
                 judiciary:
                   johTitle: "His Honour"

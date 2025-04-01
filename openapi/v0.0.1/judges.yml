@@ -33,8 +33,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "https://cdn.jsdelivr.net/gh/hmcts/api-cp-refdata-courthearing-judges/refs/heads/master/openapi/v0.0.1/judges.200.schema.json"
+                $ref: "https://cdn.jsdelivr.net/gh/hmcts/api-cp-refdata-courthearing-judges@refs/heads/master/openapi/v0.0.1/judges.200.schema.json"
               example:
-                $ref: "https://cdn.jsdelivr.net/gh/hmcts/api-cp-refdata-courthearing-judges/refs/heads/master/openapi/v0.0.1/judges.200.example.json"
+                $ref: "https://cdn.jsdelivr.net/gh/hmcts/api-cp-refdata-courthearing-judges@refs/heads/master/openapi/v0.0.1/judges.200.example.json"
         '400':
           description: bad input parameter

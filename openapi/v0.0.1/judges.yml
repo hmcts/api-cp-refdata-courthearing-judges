@@ -42,3 +42,4 @@ paths:
                     johKnownAs: "His Honour Judge Smith"
         '400':
           description: bad input parameter
+

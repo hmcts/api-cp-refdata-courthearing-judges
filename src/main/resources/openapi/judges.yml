@@ -33,7 +33,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "https://cdn.jsdelivr.net/gh/hmcts/api-cp-refdata-courthearing-judges@refs/heads/master/openapi/v0.0.1/judges.200.schema.json"
+                $ref: "judges.schema.json"
               example:
                   judiciary:
                     johTitle: "His Honour"

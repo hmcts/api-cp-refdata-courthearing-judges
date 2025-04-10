@@ -29,8 +29,7 @@
           "description": "Role of the judiciary",
           "title": "Role",
           "type": "string",
-          "enum": ["judge", "magistrate", "clerk"],
-          "default": ""
+          "enum": ["judge", "magistrate", "clerk"]
         },
         "johKnownAs": {
           "description": "Name and salutations, titles to be presented on publications",

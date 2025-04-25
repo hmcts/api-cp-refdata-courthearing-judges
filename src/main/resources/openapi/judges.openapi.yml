@@ -33,7 +33,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "judges.schema.json"
+                $ref: "schema/judges.json"
               example:
                   judiciary:
                     johTitle: "His Honour"

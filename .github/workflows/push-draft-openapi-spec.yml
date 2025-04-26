@@ -18,7 +18,7 @@ jobs:
       - name: Get short SHA for versioning
         id: vars
         run: |
-          if git describe --tags --abbrev=0 >/dev/null 2>&1; then
+          if [ -n "$(git tag)" ]; then
             LATEST_TAG=$(git describe --tags --abbrev=0)
           else
             LATEST_TAG="v0.0.0"
@@ -44,7 +44,11 @@ jobs:
         env:
           FILE_PATH_OPENAPI: "src/main/resources/openapi"
         run: |
-          FILE=$(find ${FILE_PATH_OPENAPI} -name "*.openapi.yml" | head -n 1)
+          FILE=$(find "${FILE_PATH_OPENAPI}" -name "*.openapi.yml" | head -n 1)
+          if [ -z "$FILE" ]; then
+            echo "⚠️ *** No OpenAPI spec (*.openapi.yml) found. Skipping publishing draft. ***"
+            exit 1
+          fi
           echo "openapi_file=$FILE" >> $GITHUB_OUTPUT
 
       - name: Update info.version in OpenAPI spec using yq

@@ -2,12 +2,8 @@ plugins {
   id 'java'
   id 'org.openapi.generator' version '7.12.0'
   id 'com.diffplug.spotless' version '7.0.3'
-  id 'org.sonarqube' version '6.1.0.5360'
   id 'jacoco'
   id 'maven-publish'
-}
-
-plugins {
   id "com.github.ben-manes.versions" version "0.52.0"
 }
 
@@ -55,18 +51,6 @@ tasks.named('jacocoTestReport') {
 tasks.named('check') {
   dependsOn tasks.named('jacocoTestReport')
 }
-tasks.named('sonar') {
-  dependsOn tasks.named('jacocoTestReport')
-}
-
-sonarqube {
-  properties {
-    property "sonar.projectName", "API CP :: ${rootProject.name}"
-    property "sonar.projectKey", "uk.gov.hmcts.cp:${rootProject.name}"
-    property "sonar.host.url", System.getenv("SONAR_HOST_URL") ?: "https://sonarcloud.io"
-    property "sonar.token", System.getenv("SONAR_TOKEN") ?: ""
-  }
-}
 
 // check dependencies upon release ONLY
 tasks.named("dependencyUpdates").configure {
@@ -97,16 +81,16 @@ publishing {
   repositories {
     def githubActor = project.findProperty("github.actor") ?: System.getenv("GITHUB_ACTOR")
     def githubToken = project.findProperty("github.token") ?: System.getenv("GITHUB_TOKEN")
-    def githubRepo = System.getenv("GITHUB_REPOSITORY") ?: "hmcts/api-cp-refdata-courthearing-judges"
+    def githubRepo = System.getenv("GITHUB_REPOSITORY")
 
     //debugging
-    if (githubActor != null) {
-      println "🔐 Configuring GitHub Packages publishing to: https://maven.pkg.github.com/$githubRepo"
-    }
-    println "GitHub Packages publishing required environment variables:"
-    println " - GITHUB_ACTOR=${githubActor != null ? '✔' : '❌'}"
-    println " - GITHUB_TOKEN=${githubToken != null ? '✔' : '❌'}"
-    println " - GITHUB_REPOSITORY=${githubRepo != null ? '✔' : '❌'}"
+//    if (githubActor != null) {
+//      println "🔐 Configuring GitHub Packages publishing to: https://maven.pkg.github.com/$githubRepo"
+//    }
+//    println "GitHub Packages publishing required environment variables:"
+//    println " - GITHUB_ACTOR=${githubActor != null ? '✔' : '❌'}"
+//    println " - GITHUB_TOKEN=${githubToken != null ? '✔' : '❌'}"
+//    println " - GITHUB_REPOSITORY=${githubRepo != null ? '✔' : '❌'}"
 
     maven {
       name = "GitHubPackages"
@@ -127,11 +111,6 @@ jar {
   } else {
     println "⚠️  CHANGELOG.md not found, skipping inclusion in JAR"
   }
-}
-
-ext {
-  springBootVersion = "3.4.4"
-  lombokVersion = "1.18.38"
 }
 
 def inputSpecFile = fileTree("src/main/resources/openapi").matching {
@@ -201,6 +180,11 @@ tasks.withType(Checkstyle).configureEach {
   source = source.filter { file ->
     !file.canonicalPath.startsWith(generatedDir)
   }
+}
+
+ext {
+  springBootVersion = "3.4.4"
+  lombokVersion = "1.18.38"
 }
 
 dependencies {

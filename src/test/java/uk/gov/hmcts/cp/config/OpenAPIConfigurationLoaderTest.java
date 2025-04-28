@@ -21,7 +21,7 @@ class OpenAPIConfigurationLoaderTest {
         assertEquals("Reference Data API providing information on Judges associated with a Court Hearing", info.getDescription());
 
         String apiGitHubRepository = "api-cp-refdata-courthearing-judges";
-        String expectedVersion = "0.0.0";
+        String expectedVersion = System.getProperty("API_SPEC_VERSION", "0.0.0");
 
         assertEquals(expectedVersion, info.getVersion());
 

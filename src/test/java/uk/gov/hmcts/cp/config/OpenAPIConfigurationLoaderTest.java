@@ -1,4 +1,6 @@
 package uk.gov.hmcts.cp.config;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -8,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OpenAPIConfigurationLoaderTest {
+
+    private static final Logger log = LoggerFactory.getLogger(OpenAPIConfigurationLoaderTest.class);
 
     @Test
     void openAPI_bean_should_have_expected_properties() {
@@ -22,6 +26,8 @@ class OpenAPIConfigurationLoaderTest {
 
         String apiGitHubRepository = "api-cp-refdata-courthearing-judges";
         String expectedVersion = System.getProperty("API_SPEC_VERSION", "0.0.0");
+        log.info("API version set to: {}", expectedVersion);
+
 
         assertEquals(expectedVersion, info.getVersion());
 

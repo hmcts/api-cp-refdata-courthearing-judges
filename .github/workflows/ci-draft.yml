@@ -45,9 +45,11 @@ jobs:
           echo "draft_version=$DRAFT_VERSION"
           echo "draft_version=$DRAFT_VERSION" >> $GITHUB_OUTPUT
 
-  Update-Spec-Version:
-    needs: [Artefact-Version]
+  Modify-API-Spec:
+    needs: [ Artefact-Version ]
     runs-on: ubuntu-latest
+    env:
+      JSON_SCHEMA_FILENAME: "judges.json"
     outputs:
       openapi_file: ${{ steps.find_spec.outputs.openapi_file }}
     steps:
@@ -64,7 +66,14 @@ jobs:
           fi
           echo "openapi_file=$FILE" >> $GITHUB_OUTPUT
 
-      - name: Update info.version in OpenAPI spec using yq
+      - name: Check Json schema exists
+        run: |
+          if [ ! -f "${FILE_PATH_OPENAPI}/schema/${JSON_SCHEMA_FILENAME}" ]; then
+            echo "❌ Json schema not found. Failing build."
+            exit 1
+          fi
+
+      - name: Update OpenAPI info.version and inject Judges schema
         env:
           API_NAME: ${{ github.event.repository.name }}
           API_VERSION: ${{ needs.Artefact-Version.outputs.draft_version }}
@@ -73,20 +82,21 @@ jobs:
           cmd: |
             yq '
               .info.version = strenv(API_VERSION) |
-              .servers[0].url = "https://virtserver.swaggerhub.com/HMCTS-DTS/" + strenv(API_NAME) + "/" + strenv(API_VERSION)
+              .servers[0].url = "https://virtserver.swaggerhub.com/HMCTS-DTS/" + strenv(API_NAME) + "/" + strenv(API_VERSION) |
+              .components.schemas.Judges = load("${FILE_PATH_OPENAPI}/schema/${JSON_SCHEMA_FILENAME}")
             ' "${{ steps.find_spec.outputs.openapi_file }}" > openapi-versioned.yml
 
       - name: Replace original OpenAPI file
         run: mv openapi-versioned.yml "${{ steps.find_spec.outputs.openapi_file }}"
 
-      - name: Upload updated OpenAPI file
+      - name: Upload updated OpenAPI spec
         uses: actions/upload-artifact@v4
         with:
           name: updated-openapi-spec
           path: ${{ steps.find_spec.outputs.openapi_file }}
 
   Build:
-    needs: [Artefact-Version, Update-Spec-Version]
+    needs: [Artefact-Version, Modify-API-Spec]
     runs-on: ubuntu-latest
 
     steps:

@@ -84,7 +84,8 @@ jobs:
               .info.version = strenv(API_VERSION) |
               .servers[0].url = "https://virtserver.swaggerhub.com/HMCTS-DTS/" + strenv(API_NAME) + "/" + strenv(API_VERSION) |
               .components.schemas.Judges = load("${FILE_PATH_OPENAPI}/schema/${JSON_SCHEMA_FILENAME}") |
-              (.paths..responses..content.application/json.schema.$ref select(. == "schema/${JSON_SCHEMA_FILENAME}")) = "#/components/schemas/Judges"
+              (.paths[] | select(has("get")) | .get.responses[]?.content."application/json".schema.$ref // "") |=
+                select(. == "schema/${JSON_SCHEMA_FILENAME}") // "#/components/schemas/Judges"
             ' "${{ steps.find_spec.outputs.openapi_file }}" > openapi-versioned.yml
 
       - name: Replace original OpenAPI file

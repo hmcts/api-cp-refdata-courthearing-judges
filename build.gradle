@@ -138,6 +138,7 @@ openApiGenerate {
   generateApiTests = true
   cleanupOutput = true
   configOptions = [
+          validateSpec                  : "true",
           dateLibrary                   : "java8",
           interfaceOnly                 : "true",
           hideGenerationTimestamp       : "true",

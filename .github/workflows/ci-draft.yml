@@ -25,8 +25,8 @@ jobs:
         with:
           fetch-depth: 0
 
-#      - name: Show Git tags and commit context (diagnostic/debug)
-#        run: git tag --list && git log --oneline --decorate
+      #      - name: Show Git tags and commit context (diagnostic/debug)
+      #        run: git tag --list && git log --oneline --decorate
 
       - name: Get short SHA for versioning
         id: vars
@@ -45,11 +45,9 @@ jobs:
           echo "draft_version=$DRAFT_VERSION"
           echo "draft_version=$DRAFT_VERSION" >> $GITHUB_OUTPUT
 
-  Modify-API-Spec:
-    needs: [ Artefact-Version ]
+  Update-Spec-Version:
+    needs: [Artefact-Version]
     runs-on: ubuntu-latest
-    env:
-      JSON_SCHEMA_FILENAME: "judges.json"
     outputs:
       openapi_file: ${{ steps.find_spec.outputs.openapi_file }}
     steps:
@@ -66,14 +64,7 @@ jobs:
           fi
           echo "openapi_file=$FILE" >> $GITHUB_OUTPUT
 
-      - name: Check Json schema exists
-        run: |
-          if [ ! -f "${FILE_PATH_OPENAPI}/schema/${JSON_SCHEMA_FILENAME}" ]; then
-            echo "❌ Json schema not found. Failing build."
-            exit 1
-          fi
-
-      - name: Update OpenAPI info.version and inject Judges schema
+      - name: Update info.version in OpenAPI spec using yq
         env:
           API_NAME: ${{ github.event.repository.name }}
           API_VERSION: ${{ needs.Artefact-Version.outputs.draft_version }}
@@ -82,23 +73,20 @@ jobs:
           cmd: |
             yq '
               .info.version = strenv(API_VERSION) |
-              .servers[0].url = "https://virtserver.swaggerhub.com/HMCTS-DTS/" + strenv(API_NAME) + "/" + strenv(API_VERSION) |
-              .components.schemas.Judges = load("${FILE_PATH_OPENAPI}/schema/${JSON_SCHEMA_FILENAME}") |
-              (.paths[] | select(has("get")) | .get.responses[]?.content."application/json".schema.$ref // "") |=
-                select(. == "schema/${JSON_SCHEMA_FILENAME}") // "#/components/schemas/Judges"
+              .servers[0].url = "https://virtserver.swaggerhub.com/HMCTS-DTS/" + strenv(API_NAME) + "/" + strenv(API_VERSION)
             ' "${{ steps.find_spec.outputs.openapi_file }}" > openapi-versioned.yml
 
       - name: Replace original OpenAPI file
         run: mv openapi-versioned.yml "${{ steps.find_spec.outputs.openapi_file }}"
 
-      - name: Upload updated OpenAPI spec
+      - name: Upload updated OpenAPI file
         uses: actions/upload-artifact@v4
         with:
           name: updated-openapi-spec
           path: ${{ steps.find_spec.outputs.openapi_file }}
 
   Build:
-    needs: [Artefact-Version, Modify-API-Spec]
+    needs: [Artefact-Version, Update-Spec-Version]
     runs-on: ubuntu-latest
 
     steps:
@@ -122,26 +110,26 @@ jobs:
           name: updated-openapi-spec
           path: ${{ env.FILE_PATH_OPENAPI }}
 
-#      - name: Set Sonar Project Key and Name
-#        id: sonar_vars
-#        run: |
-#          repo_sanitized="${GITHUB_REPOSITORY//\//_}"
-#          echo "project_key=$repo_sanitized" >> $GITHUB_OUTPUT
-#          echo "project_name=$repo_sanitized" >> $GITHUB_OUTPUT
-#
-#      - name: Analyze with SonarCloud
-#        uses: SonarSource/sonarqube-scan-action@v5.1.0
-#        with:
-#          args: >
-#            -Dsonar.organization=hmcts
-#            -Dsonar.projectKey=${{ steps.sonar_vars.outputs.project_key }}
-#            -Dsonar.projectName=${{ steps.sonar_vars.outputs.project_name }}
-#            -Dsonar.projectVersion=${{ needs.Artefact-Version.outputs.draft_version }}
-#            -Dsonar.sources=src
-#            -Dsonar.java.binaries=build/classes
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      #      - name: Set Sonar Project Key and Name
+      #        id: sonar_vars
+      #        run: |
+      #          repo_sanitized="${GITHUB_REPOSITORY//\//_}"
+      #          echo "project_key=$repo_sanitized" >> $GITHUB_OUTPUT
+      #          echo "project_name=$repo_sanitized" >> $GITHUB_OUTPUT
+      #
+      #      - name: Analyze with SonarCloud
+      #        uses: SonarSource/sonarqube-scan-action@v5.1.0
+      #        with:
+      #          args: >
+      #            -Dsonar.organization=hmcts
+      #            -Dsonar.projectKey=${{ steps.sonar_vars.outputs.project_key }}
+      #            -Dsonar.projectName=${{ steps.sonar_vars.outputs.project_name }}
+      #            -Dsonar.projectVersion=${{ needs.Artefact-Version.outputs.draft_version }}
+      #            -Dsonar.sources=src
+      #            -Dsonar.java.binaries=build/classes
+      #        env:
+      #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Gradle Build and Publish on Push [Merge]
         env:

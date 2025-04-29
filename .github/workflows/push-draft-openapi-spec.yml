@@ -1,55 +1,46 @@
-name: CI Build and Publish Increments Draft
+name: Push Draft OpenAPI Spec to APIHub
 
 on:
-  pull_request:
-    branches:
-      - master
-      - main
   push:
     branches:
-      - master
       - main
+      - master
 
 env:
   FILE_PATH_OPENAPI: "src/main/resources/openapi"
 
 jobs:
-  Artefact-Version:
+  API-Version:
     runs-on: ubuntu-latest
     outputs:
       draft_version: ${{ steps.vars.outputs.draft_version }}
-      latest_tag: ${{ steps.vars.outputs.latest_tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      #      - name: Show Git tags and commit context (diagnostic/debug)
-      #        run: git tag --list && git log --oneline --decorate
-
       - name: Get short SHA for versioning
         id: vars
         run: |
-          if [ -n "$(git tag)" ]; then
-            LATEST_TAG=$(git describe --tags --abbrev=0)
+          if LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null); then
+            :
           else
             LATEST_TAG="v0.0.0"
           fi
+          echo "🏷️ Latest Git tag resolved to: $LATEST_TAG"
           LATEST_TAG="${LATEST_TAG#v}"
-          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
 
           SHORT_SHA=$(git rev-parse --short HEAD)
           DRAFT_VERSION="${LATEST_TAG}-${SHORT_SHA}"
-
+          
           echo "draft_version=$DRAFT_VERSION"
           echo "draft_version=$DRAFT_VERSION" >> $GITHUB_OUTPUT
 
-  Update-Spec-Version:
-    needs: [Artefact-Version]
+  Apply-Version-to-API-Spec:
+    needs: [API-Version]
     runs-on: ubuntu-latest
-    outputs:
-      openapi_file: ${{ steps.find_spec.outputs.openapi_file }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -67,7 +58,7 @@ jobs:
       - name: Update info.version in OpenAPI spec using yq
         env:
           API_NAME: ${{ github.event.repository.name }}
-          API_VERSION: ${{ needs.Artefact-Version.outputs.draft_version }}
+          API_VERSION: ${{ needs.API-Version.outputs.draft_version }}
         uses: mikefarah/yq@v4.45.1
         with:
           cmd: |
@@ -85,71 +76,57 @@ jobs:
           name: updated-openapi-spec
           path: ${{ steps.find_spec.outputs.openapi_file }}
 
-  Build:
-    needs: [Artefact-Version, Update-Spec-Version]
+  Push-API-to-APIHub:
+    needs: [API-Version, Apply-Version-to-API-Spec]
     runs-on: ubuntu-latest
+    env:
+      SWAGGERHUB_API_KEY: ${{ secrets.APIHUB_API_KEY }}
 
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: current
-
-      - name: Download updated OpenAPI file
+      - name: Download versioned OpenAPI spec
         uses: actions/download-artifact@v4
         with:
           name: updated-openapi-spec
-          path: ${{ env.FILE_PATH_OPENAPI }}
+          path: ./
 
-      #      - name: Set Sonar Project Key and Name
-      #        id: sonar_vars
-      #        run: |
-      #          repo_sanitized="${GITHUB_REPOSITORY//\//_}"
-      #          echo "project_key=$repo_sanitized" >> $GITHUB_OUTPUT
-      #          echo "project_name=$repo_sanitized" >> $GITHUB_OUTPUT
-      #
-      #      - name: Analyze with SonarCloud
-      #        uses: SonarSource/sonarqube-scan-action@v5.1.0
-      #        with:
-      #          args: >
-      #            -Dsonar.organization=hmcts
-      #            -Dsonar.projectKey=${{ steps.sonar_vars.outputs.project_key }}
-      #            -Dsonar.projectName=${{ steps.sonar_vars.outputs.project_name }}
-      #            -Dsonar.projectVersion=${{ needs.Artefact-Version.outputs.draft_version }}
-      #            -Dsonar.sources=src
-      #            -Dsonar.java.binaries=build/classes
-      #        env:
-      #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
 
-      - name: Gradle Build and Publish on Push [Merge]
+      - name: Install SwaggerHub CLI
+        run: npm install -g swaggerhub-cli
+
+      - name: Set CLI_API_REF env var
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SWAGGERHUB_API_KEY: ${{ secrets.APIHUB_API_KEY }}
+          APIHUB_OWNER: ${{ vars.APIHUB_ORGANISATION }}
+          API_NAME: ${{ github.event.repository.name }}
+          API_VERSION: ${{ needs.API-Version.outputs.draft_version }}
         run: |
-          VERSION=${{ needs.Artefact-Version.outputs.draft_version }}
+          echo "CLI_API_REF=${APIHUB_OWNER}/${API_NAME}/${API_VERSION}" >> "$GITHUB_ENV"
 
-          gradle build \
-            -DAPI_SPEC_VERSION=$VERSION \
-            -DGITHUB_REPOSITORY=${{ github.repository }} \
-            -DGITHUB_ACTOR=${{ github.actor }} \
-            -DGITHUB_TOKEN=$GITHUB_TOKEN
+      - name: Push API definition into API Hub (UNPUBLISHED)
+        # https://github.com/SmartBear/swaggerhub-cli?tab=readme-ov-file#swaggerhub-apicreate
+        run: |
+          swaggerhub api:create "${CLI_API_REF}" --file openapi-versioned.yml --visibility public
 
-          if [ "${{ github.event_name }}" == "push" ]; then
-            echo "Push event trigger - Publishing artefact"
-            gradle publish \
-              -DAPI_SPEC_VERSION=$VERSION \
-              -DGITHUB_REPOSITORY=${{ github.repository }} \
-              -DGITHUB_ACTOR=${{ github.actor }} \
-              -DGITHUB_TOKEN=$GITHUB_TOKEN
-          else
-            echo "Skipping publish because this is a pull_request"
+      - name: Check the API definition exists
+        # https://github.com/SmartBear/swaggerhub-cli?tab=readme-ov-file#swaggerhub-apiget
+        run: |
+          set -o pipefail
+          if ! swaggerhub api:get "${CLI_API_REF}" 2>&1 | tee error.log; then
+            echo "❌ API definition was not found on APIHub"
+            echo "--- CLI Error Output ---"
+            cat error.log
+            exit 1
+          fi
+
+      - name: Validate definition
+        # https://github.com/SmartBear/swaggerhub-cli?tab=readme-ov-file#swaggerhub-apivalidate
+        run: |
+          set -o pipefail
+          if ! swaggerhub api:validate "${CLI_API_REF}" 2>&1 | tee error.log; then
+            echo "❌ OpenAPI definition failed validation"
+            echo "--- CLI Error Output ---"
+            cat error.log
+            exit 1
           fi

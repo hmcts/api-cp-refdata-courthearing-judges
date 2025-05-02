@@ -157,6 +157,8 @@ openApiGenerate {
 cyclonedxBom {
   includeConfigs = ["runtimeClasspath"]
   skipConfigs = ["compileClasspath", "testImplementation"]
+  schemaVersion = "1.6"
+  componentVersion = project.version
 }
 
 tasks.named('compileJava') {

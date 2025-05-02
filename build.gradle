@@ -154,11 +154,13 @@ openApiGenerate {
   ]
 }
 
+//https://github.com/CycloneDX/cyclonedx-gradle-plugin
 cyclonedxBom {
   includeConfigs = ["runtimeClasspath"]
   skipConfigs = ["compileClasspath", "testImplementation"]
   schemaVersion = "1.6"
   componentVersion = project.version
+  destination = file("$buildDir/reports")
 }
 
 tasks.named('compileJava') {

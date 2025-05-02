@@ -165,7 +165,7 @@ tasks.register('downloadFormatter') {
   doLast {
     def file = new File(formatterPath)
     file.parentFile.mkdirs()
-    file.text = URL.toURL(formatterUrl).text
+    file.text = URI.toURL(formatterUrl).text
   }
 }
 spotless {

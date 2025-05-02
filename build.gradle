@@ -1,6 +1,6 @@
 plugins {
   id 'java'
-  id 'org.openapi.generator' version '7.12.0'
+  id 'org.openapi.generator' version '7.13.0'
   id 'com.diffplug.spotless' version '7.0.3'
   id 'jacoco'
   id 'maven-publish'
@@ -165,7 +165,7 @@ tasks.register('downloadFormatter') {
   doLast {
     def file = new File(formatterPath)
     file.parentFile.mkdirs()
-    file.text = new URL(formatterUrl).text
+    file.text = new URI(formatterUrl).toURL().text
   }
 }
 spotless {
@@ -197,7 +197,7 @@ ext {
 
 dependencies {
   // OpenAPI Generator runtime support
-  implementation 'org.openapitools:openapi-generator-core:7.12.0'
+  implementation 'org.openapitools:openapi-generator-core:7.13.0'
   implementation 'io.swagger.parser.v3:swagger-parser:2.1.16'
   implementation 'io.swagger.core.v3:swagger-annotations:2.2.30'
   implementation 'net.logstash.logback:logstash-logback-encoder:7.4'

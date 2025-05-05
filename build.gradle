@@ -1,5 +1,6 @@
 plugins {
   id 'java'
+  id 'com.github.spotbugs' version '4.9.3'
   id 'org.openapi.generator' version '7.13.0'
   id 'com.diffplug.spotless' version '7.0.3'
   id 'jacoco'
@@ -70,6 +71,7 @@ tasks.named('jacocoTestReport') {
 
 tasks.named('check') {
   dependsOn tasks.named('jacocoTestReport')
+  dependsOn tasks.withType(com.github.spotbugs.snom.SpotBugsTask)
 }
 
 // check dependencies upon release ONLY
@@ -217,9 +219,29 @@ tasks.withType(Checkstyle).configureEach {
   }
 }
 
+spotbugs {
+  toolVersion = '4.7.3'
+  ignoreFailures = false
+  showProgress = true
+  effort = 'max'
+  reportLevel = 'low'
+}
+
+tasks.withType(com.github.spotbugs.snom.SpotBugsTask).configureEach {
+  reports {
+    xml.required.set(false)
+    html.required.set(true)
+    html.outputLocation.set(file("$buildDir/reports/spotbugs/${name}.html"))
+  }
+}
+
 ext {
   springBootVersion = "3.4.5"
   lombokVersion = "1.18.38"
+}
+
+configurations {
+  spotbugsPlugins
 }
 
 dependencies {
@@ -239,4 +261,6 @@ dependencies {
   testImplementation 'org.junit.jupiter:junit-jupiter-api'
   testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
   testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+  spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.12.0'
 }

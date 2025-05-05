@@ -1,0 +1,27 @@
+name: Code analysis
+
+on:
+  pull_request:
+    branches:
+      - master
+      - main
+
+jobs:
+  pmd-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      #https://docs.pmd-code.org/latest/pmd_rules_java.html
+      - name: Run PMD analysis
+        uses: pmd/pmd-github-action@v2
+        with:
+          rulesets: 'category/java/bestpractices.xml,category/java/codestyle.xml,category/java/performance.xml,category/java/security.xml'
+          sourcePath: './src/main/java'
+          analyzeModifiedFilesOnly: false

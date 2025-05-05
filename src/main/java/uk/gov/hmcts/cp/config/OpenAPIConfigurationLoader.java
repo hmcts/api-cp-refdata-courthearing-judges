@@ -13,11 +13,11 @@ public class OpenAPIConfigurationLoader {
 
     private static final String JUDGES_OPENAPI_YML = "openapi/judges.openapi.yml";
 
-    public OpenAPI openAPI() {
+    public final OpenAPI openAPI() {
         return loadOpenApiFromClasspath(JUDGES_OPENAPI_YML);
     }
 
-    public static OpenAPI loadOpenApiFromClasspath(String path) {
+    public final static OpenAPI loadOpenApiFromClasspath(String path) {
         try (InputStream inputStream = OpenAPIConfigurationLoader.class.getClassLoader().getResourceAsStream(path)) {
             if (inputStream == null) {
                 throw new IllegalArgumentException("Missing resource: " + path);

@@ -18,10 +18,14 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      #https://docs.pmd-code.org/latest/pmd_rules_java.html
       - name: Run PMD analysis
         uses: pmd/pmd-github-action@v2
+        #https://docs.pmd-code.org/latest/pmd_rules_java.html
         with:
           rulesets: 'category/java/bestpractices.xml,category/java/codestyle.xml,category/java/performance.xml,category/java/security.xml'
           sourcePath: './src/main/java'
           analyzeModifiedFilesOnly: false
+
+      - name: Fail build if there are violations
+        if: steps.pmd.outputs.violations != 0
+        run: exit 1

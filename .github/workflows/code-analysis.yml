@@ -20,10 +20,11 @@ jobs:
 
       - name: Run PMD analysis using Docker
         run: |
+          mkdir -p build/reports/pmd
           run_pmd() {
-              docker run --rm -v $PWD:/src pmdcode/pmd:latest "$@"
+            docker run --rm -v "$PWD":/src -w /src pmdcode/pmd:latest "$@"
           }
-          run_pmd check \
+          run_pmd pmd check \
             --dir src/main/java \
             --rulesets \
             category/java/bestpractices.xml, \

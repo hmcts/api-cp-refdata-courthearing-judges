@@ -24,7 +24,7 @@ jobs:
           run_pmd() {
             docker run --rm -v "$PWD":/src -w /src pmdcode/pmd:latest "$@"
           }
-          run_pmd pmd check \
+          run_pmd check \
             --dir src/main/java \
             --rulesets \
             category/java/bestpractices.xml, \

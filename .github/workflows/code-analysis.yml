@@ -52,7 +52,7 @@ jobs:
       - name: Convert PMD XML to HTML report
         run: |
           curl -L -o cpdhtml.xslt https://raw.githubusercontent.com/pmd/pmd/refs/heads/main/pmd-core/etc/xslt/cpdhtml.xslt
-          xsltproc cpdhtml.xslt pmd-report.xml > pmd-report.html
+          xsltproc pmd-html.xslt build/reports/pmd/pmd-report.xml > build/reports/pmd/pmd-report.html
 
       - name: Upload PMD HTML report
         uses: actions/upload-artifact@v4

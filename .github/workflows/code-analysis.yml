@@ -46,10 +46,12 @@ jobs:
           fi
           echo "PMD_EXIT_CODE=$PMD_EXIT_CODE" >> $GITHUB_ENV
 
+      - name: Install xsltproc
+        run: sudo apt-get update && sudo apt-get install -y xsltproc
+
       - name: Convert PMD XML to HTML report
         run: |
-          sudo apt-get install -y xsltproc
-          wget https://raw.githubusercontent.com/pmd/pmd/master/pmd-core/etc/xslt/cpdhtml.xslt
+          curl -L -o cpdhtml.xslt https://raw.githubusercontent.com/pmd/pmd/refs/heads/main/pmd-core/etc/xslt/cpdhtml.xslt
           xsltproc cpdhtml.xslt pmd-report.xml > pmd-report.html
 
       - name: Upload PMD HTML report

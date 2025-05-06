@@ -15,7 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class OpenAPIConfigurationLoader {
 
-    private static final Logger log = LoggerFactory.getLogger(OpenAPIConfigurationLoader.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OpenAPIConfigurationLoader.class);
     private static final String JUDGES_OPENAPI = "openapi/judges.openapi.yml";
 
     public static OpenAPI loadOpenApiFromClasspath(final String path) {
@@ -25,7 +25,7 @@ public class OpenAPIConfigurationLoader {
 
         try (InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(path)) {
             if (inputStream == null) {
-                log.error("OpenAPI specification file path is required but was null or blank");
+                LOG.error("OpenAPI specification file path is required but was null or blank");
                 throw new IllegalArgumentException("Missing resource: " + path);
             }
             final String yaml = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);

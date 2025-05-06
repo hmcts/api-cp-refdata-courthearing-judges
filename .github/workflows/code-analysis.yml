@@ -27,11 +27,7 @@ jobs:
           /opt/pmd/bin/pmd check \
             --dir src/main/java \
             --rulesets \
-            category/java/bestpractices.xml, \
-            category/java/codestyle.xml, \
-            category/java/errorprone.xml, \
-            category/java/performance.xml, \
-            category/java/security.xml \
+            .github/pmd-ruleset.xml \
             --format html \
             -r build/reports/pmd/pmd-report.html
           PMD_EXIT_CODE=$?
@@ -46,15 +42,8 @@ jobs:
           fi
           echo "PMD_EXIT_CODE=$PMD_EXIT_CODE" >> $GITHUB_ENV
 
-#      - name: Install xsltproc
-#        run: sudo apt-get update && sudo apt-get install -y xsltproc
-#
-#      - name: Convert PMD XML to HTML report
-#        run: |
-#          curl -L -o cpdhtml.xslt https://raw.githubusercontent.com/pmd/pmd/refs/heads/main/pmd-core/etc/xslt/cpdhtml.xslt
-#          xsltproc pmd-html.xslt build/reports/pmd/pmd-report.xml > build/reports/pmd/pmd-report.html
-
       - name: Upload PMD HTML report
+        if: env.PMD_EXIT_CODE != '0'
         uses: actions/upload-artifact@v4
         with:
           name: pmd-report

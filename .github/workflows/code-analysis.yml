@@ -23,6 +23,7 @@ jobs:
         run: |
           mkdir -p build/reports/pmd
           
+          set +e
           /opt/pmd/bin/pmd check \
             --dir src/main/java \
             --rulesets \
@@ -33,7 +34,8 @@ jobs:
             category/java/security.xml \
             --format xml \
             -r build/reports/pmd/pmd-report.xml
-            PMD_EXIT_CODE=$? || true
+          PMD_EXIT_CODE=$?
+          set -e
           
           if [[ "$PMD_EXIT_CODE" -eq 1 ]]; then
             echo "Unexpected internal error during PMD execution"

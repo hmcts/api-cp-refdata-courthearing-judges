@@ -18,14 +18,44 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Run PMD analysis
-        uses: pmd/pmd-github-action@v2
-        #https://docs.pmd-code.org/latest/pmd_rules_java.html
-        with:
-          rulesets: 'category/java/bestpractices.xml,category/java/codestyle.xml,category/java/performance.xml,category/java/security.xml'
-          sourcePath: './src/main/java'
-          analyzeModifiedFilesOnly: false
+      - name: Install PMD CLI
+        run: |
+          wget https://github.com/pmd/pmd/releases/download/pmd_releases%2F7.13.0/pmd-bin-7.13.0.zip
+          unzip pmd-bin-7.13.0.zip
+          mv pmd-bin-7.13.0 /opt/pmd
+          echo "/opt/pmd/bin" >> $GITHUB_PATH
 
-      - name: Fail build if there are violations
-        if: steps.pmd.outputs.violations != 0
-        run: exit 1
+      - name: Run PMD CLI analysis
+        run: |
+          /opt/pmd/bin/pmd check \
+            --dir src/main/java \
+            --rulesets \
+            category/java/bestpractices.xml, \
+            category/java/codestyle.xml, \
+            category/java/errorprone.xml, \
+            category/java/performance.xml, \
+            category/java/security.xml \
+            --format xml \
+            -r build/reports/pmd/pmd-report.xml
+
+      - name: Convert PMD XML to HTML report
+        run: |
+          sudo apt-get install -y xsltproc
+          wget https://raw.githubusercontent.com/pmd/pmd/master/pmd-core/etc/xslt/cpdhtml.xslt
+          xsltproc cpdhtml.xslt pmd-report.xml > pmd-report.html
+
+      - name: Upload PMD HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pmd-report
+          path: build/reports/pmd/pmd-report.html
+
+      - name: Fail build if violations are found
+        run: |
+          if grep -q "<violation" pmd-report.xml; then
+            echo "PMD violations found"
+            cat pmd-report.xml
+            exit 1
+          else
+            echo "No PMD violations"
+          fi

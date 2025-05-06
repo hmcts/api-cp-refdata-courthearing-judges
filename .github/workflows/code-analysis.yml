@@ -21,7 +21,7 @@ jobs:
       - name: Run PMD analysis using Docker
         run: |
           run_pmd() {
-              docker run --rm -v "$(pwd)":/src -w /src pmd/pmd:latest "$@"
+              docker run --rm -v $PWD:/src pmdcode/pmd:latest "$@"
           }
           run_pmd pmd check \
             --dir src/main/java \

@@ -33,6 +33,16 @@ jobs:
             category/java/security.xml \
             --format xml \
             -r build/reports/pmd/pmd-report.xml
+            PMD_EXIT_CODE=$? || true
+          
+          if [[ "$PMD_EXIT_CODE" -eq 1 ]]; then
+            echo "Unexpected internal error during PMD execution"
+            exit 1
+          elif [[ "$PMD_EXIT_CODE" -eq 2 ]]; then
+            echo "CLI usage error"
+            exit 1
+          fi
+          echo "PMD_EXIT_CODE=$PMD_EXIT_CODE" >> $GITHUB_ENV
 
       - name: Convert PMD XML to HTML report
         run: |
@@ -48,10 +58,9 @@ jobs:
 
       - name: Fail build if violations are found
         run: |
-          if grep -q "<violation" pmd-report.xml; then
-            echo "PMD violations found"
-            cat pmd-report.xml
-            exit 1
-          else
+          if [[ "$PMD_EXIT_CODE" -eq 0 ]]; then
             echo "No PMD violations"
+          else
+            echo "PMD violations found"
+            exit 1
           fi

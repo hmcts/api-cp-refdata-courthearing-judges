@@ -28,7 +28,6 @@ class OpenAPIConfigurationLoaderTest {
         String expectedVersion = System.getProperty("API_SPEC_VERSION", "0.0.0");
         log.info("API version set to: {}", expectedVersion);
 
-
         assertEquals(expectedVersion, info.getVersion());
 
         License license = info.getLicense();
@@ -52,4 +51,24 @@ class OpenAPIConfigurationLoaderTest {
         );
         assertTrue(exception.getMessage().contains("Missing resource"));
     }
-} 
+
+    @Test
+    void loadOpenApiFromClasspath_should_throw_for_blank_path() {
+        try{
+            OpenAPIConfigurationLoader.loadOpenApiFromClasspath(" ");
+            assert false;
+        } catch (IllegalArgumentException e) {
+            assert true;
+        }
+    }
+
+    @Test
+    void loadOpenApiFromClasspath_should_throw_for_null_path() {
+        try{
+            OpenAPIConfigurationLoader.loadOpenApiFromClasspath(null);
+            assert false;
+        } catch (IllegalArgumentException e) {
+            assert true;
+        }
+    }
+}

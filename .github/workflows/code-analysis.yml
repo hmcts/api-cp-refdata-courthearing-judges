@@ -18,16 +18,12 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Install PMD CLI
+      - name: Run PMD analysis using Docker
         run: |
-          wget https://github.com/pmd/pmd/releases/download/pmd_releases%2F7.13.0/pmd-bin-7.13.0.zip
-          unzip pmd-bin-7.13.0.zip
-          mv pmd-bin-7.13.0 /opt/pmd
-          echo "/opt/pmd/bin" >> $GITHUB_PATH
-
-      - name: Run PMD CLI analysis
-        run: |
-          /opt/pmd/bin/pmd check \
+          run_pmd() {
+              docker run --rm -v "$(pwd)":/src -w /src pmd/pmd:latest "$@"
+          }
+          run_pmd pmd check \
             --dir src/main/java \
             --rulesets \
             category/java/bestpractices.xml, \

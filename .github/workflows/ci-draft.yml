@@ -136,6 +136,9 @@ jobs:
       - name: Gradle Build and Publish on Push [Merge]
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HMCTS_ARTEFACT_REPOSITORY: ${{ secrets.HMCTS_ARTEFACT_REPOSITORY }}
+          HMCTS_ARTEFACT_ACTOR: ${{ secrets.HMCTS_ARTEFACT_ACTOR }}
+          HMCTS_ARTEFACT_TOKEN: ${{ secrets.HMCTS_ARTEFACT_TOKEN }}
         run: |
           VERSION=${{ needs.Artefact-Version.outputs.draft_version }}
 
@@ -151,7 +154,10 @@ jobs:
               -DAPI_SPEC_VERSION=$VERSION \
               -DGITHUB_REPOSITORY=${{ github.repository }} \
               -DGITHUB_ACTOR=${{ github.actor }} \
-              -DGITHUB_TOKEN=$GITHUB_TOKEN
+              -DGITHUB_TOKEN=$GITHUB_TOKEN \
+              -DHMCTS_ARTEFACT_REPOSITORY=$github.HMCTS_ARTEFACT_REPOSITORY \
+              -DHMCTS_ARTEFACT_ACTOR=$HMCTS_ARTEFACT_ACTOR \
+              -DHMCTS_ARTEFACT_TOKEN=$HMCTS_ARTEFACT_TOKEN 
           else
             echo "Skipping publish because this is a pull_request"
           fi

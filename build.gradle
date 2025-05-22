@@ -13,15 +13,22 @@ version = System.getProperty('API_SPEC_VERSION') ?: '0.0.999'
 def githubActor = project.findProperty("github.actor") ?: System.getenv("GITHUB_ACTOR")
 def githubToken = project.findProperty("github.token") ?: System.getenv("GITHUB_TOKEN")
 def githubRepo = System.getenv("GITHUB_REPOSITORY")
+def hmctsArtefactRepo = System.getenv("HMCTS_ARTEFACT_REPOSITORY")?.replaceAll(/\/+$/, '')
+def hmctsArtefactActor = System.getenv("HMCTS_ARTEFACT_ACTOR")
+def hmctsArtefactToken = System.getenv("HMCTS_ARTEFACT_TOKEN")
+
 
 //debugging
 //    if (githubActor != null) {
 //      println "🔐 Configuring GitHub Packages publishing to: https://maven.pkg.github.com/$githubRepo"
 //    }
 //    println "GitHub Packages publishing required environment variables:"
-//    println " - GITHUB_ACTOR=${githubActor != null ? '✔' : '❌'}"
-//    println " - GITHUB_TOKEN=${githubToken != null ? '✔' : '❌'}"
-//    println " - GITHUB_REPOSITORY=${githubRepo != null ? '✔' : '❌'}"
+//    println " - GITHUB_ACTOR=${githubActor != null ? ' ✔ FOUND' : '❌'}"
+//    println " - GITHUB_TOKEN=${githubToken != null ? ' ✔ FOUND' : '❌'}"
+//    println " - GITHUB_REPOSITORY=${githubRepo != null ? ' ✔ FOUND' : '❌'}"
+//    println " - HMCTS_ARTEFACT_ACTOR=${hmctsArtefactActor != null ? ' ✔ FOUND' : '❌'}"
+//    println " - HMCTS_ARTEFACT_TOKEN=${hmctsArtefactToken != null ? ' ✔ FOUND' : '❌'}"
+//    println " - HMCTS_ARTEFACT_REPOSITORY=${hmctsArtefactRepo != null ? ' ✔ FOUND' : '❌'}"
 
 java {
   sourceCompatibility = JavaVersion.VERSION_21
@@ -105,6 +112,14 @@ publishing {
       credentials {
         username = githubActor
         password = githubToken
+      }
+    }
+    maven {
+      name = "HMCTSArtefactRepository"
+      url = uri("$hmctsArtefactRepo")
+      credentials {
+        username = hmctsArtefactActor
+        password = hmctsArtefactToken
       }
     }
   }

@@ -99,13 +99,8 @@ repositories {
   maven {
     url = azureADOArtifactRepository
   }
-  components.all {
-    withModule("com.github.joschi.jackson:jackson-datatype-threetenbp") {
-      metadataSource {
-        mavenPom()
-        artifact()
-      }
-    }
+  maven {
+    url = 'https://jitpack.io'
   }
 }
 

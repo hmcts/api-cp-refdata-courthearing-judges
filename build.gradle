@@ -99,9 +99,6 @@ repositories {
   maven {
     url = azureADOArtifactRepository
   }
-  maven {
-    url = 'https://jitpack.io'
-  }
 }
 
 publishing {

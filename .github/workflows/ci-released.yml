@@ -1,4 +1,4 @@
-name: CI Gradle
+name: CI Build and Publish (RELEASE)
 
 on:
   release:
@@ -17,13 +17,16 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Get version from tag
-        id: vars
-        run: |
-          TAG_NAME="${GITHUB_REF#refs/tags/}"
-          VERSION="${TAG_NAME#v}"
-          echo "RELEASED_VERSION=$VERSION" >> $GITHUB_OUTPUT
+      - name: Generate Artefact Version
+        id: artefact
+        uses: hmcts/artefact-version-action@v1
+        with:
+          release: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   Update-Spec-Version:
     needs: [ Artefact-Version ]

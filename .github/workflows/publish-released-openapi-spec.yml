@@ -13,17 +13,20 @@ jobs:
   API-Version:
     runs-on: ubuntu-latest
     outputs:
-      released_version: ${{ steps.vars.outputs.version }}
+      artefact_version: ${{ steps.artefact.outputs.release_version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Get version from tag
-        id: vars
-        run: |
-          TAG_NAME="${GITHUB_REF#refs/tags/}"
-          VERSION="${TAG_NAME#v}"  # strip 'v' prefix
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      - name: Generate Artefact Version
+        id: artefact
+        uses: hmcts/artefact-version-action@v1
+        with:
+          release: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   Apply-Version-to-API-Spec:
     needs: [ API-Version ]
@@ -42,7 +45,7 @@ jobs:
       - name: Update info.version in OpenAPI spec using yq
         env:
           API_NAME: ${{ github.event.repository.name }}
-          API_VERSION: ${{ needs.API-Version.outputs.released_version }}
+          API_VERSION: ${{ needs.API-Version.outputs.artefact_version }}
         uses: mikefarah/yq@v4.45.4
         with:
           cmd: |
@@ -80,7 +83,7 @@ jobs:
         env:
           APIHUB_OWNER: ${{ vars.APIHUB_ORGANISATION }}
           API_NAME: ${{ github.event.repository.name }}
-          API_VERSION: ${{ needs.API-Version.outputs.released_version }}
+          API_VERSION: ${{ needs.API-Version.outputs.artefact_version }}
         run: |
           echo "CLI_API_REF=${APIHUB_OWNER}/${API_NAME}/${API_VERSION}" >> "$GITHUB_ENV"
 

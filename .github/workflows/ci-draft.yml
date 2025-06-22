@@ -107,7 +107,7 @@ jobs:
         run: |
           echo "Building with ARTEFACT_VERSION=$ARTEFACT_VERSION"
            
-          gradle build -DARTEFACT_VERSION=$ARTEFACT_VERSION
+          gradle build -DAPI_SPEC_VERSION=$ARTEFACT_VERSION
      
           if [ "${{ github.event_name }}" == "push" ]; then
             echo "Push event trigger - Publishing artefact"

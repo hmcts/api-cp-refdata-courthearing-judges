@@ -34,7 +34,7 @@ jobs:
     needs: [Artefact-Version]
     runs-on: ubuntu-latest
     outputs:
-      openapi_file: ${{ steps.update_spec.outputs.openapi_file }}
+      upload_artifact_name: ${{ steps.update_spec.outputs.upload_artifact_name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -73,7 +73,7 @@ jobs:
       - name: Download updated OpenAPI file
         uses: actions/download-artifact@v4
         with:
-          name: updated-openapi-spec
+          name: ${{ needs.Update-Spec-Version.outputs.upload_artifact_name }}
           path: ${{ env.FILE_PATH_OPENAPI }}
 
       - name: Gradle Build

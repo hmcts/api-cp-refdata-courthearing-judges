@@ -40,7 +40,7 @@ jobs:
 
       - name: Set CLI_API_REF env var
         env:
-          SWAGGERHUB_API_KEY: ${{ inputs.is_release }}
+          SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}
           APIHUB_OWNER: ${{ inputs.apihub_owner }}
           API_NAME: ${{ inputs.api_name }}
           API_VERSION: ${{ inputs.api_version }}

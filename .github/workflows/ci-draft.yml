@@ -108,7 +108,7 @@ jobs:
       - name: Download updated OpenAPI file
         uses: actions/download-artifact@v4
         with:
-          name: updated-openapi-spec
+          name: ${{ needs.Update-Spec-Version.outputs.upload_artifact_name }}
           path: ${{ env.FILE_PATH_OPENAPI }}
 
       - name: Gradle Publish

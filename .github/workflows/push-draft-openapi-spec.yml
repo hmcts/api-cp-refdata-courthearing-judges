@@ -25,12 +25,14 @@ on:
 jobs:
   Push-API-to-APIHub:
     runs-on: ubuntu-latest
+    env:
+      SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}
     steps:
       - name: Download versioned OpenAPI spec
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.upload_artifact_name }}
-          path: ./openapi-spec
+          path: ./${{ inputs.api_version }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -40,7 +42,6 @@ jobs:
 
       - name: Set CLI_API_REF env var
         env:
-          SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}
           APIHUB_OWNER: ${{ inputs.apihub_owner }}
           API_NAME: ${{ inputs.api_name }}
           API_VERSION: ${{ inputs.api_version }}
@@ -50,7 +51,7 @@ jobs:
       - name: Find OpenAPI file
         id: find_spec
         run: |
-          FILE=$(find ./openapi-spec -type f -name "*.yml" | head -n 1)
+          FILE=$(find ./${{ inputs.api_version }} -type f -name "*.yml" | head -n 1)
           echo "openapi_spec_file=$FILE" >> "$GITHUB_OUTPUT"
 
       # https://github.com/SmartBear/swaggerhub-cli?tab=readme-ov-file#swaggerhub-apicreate

@@ -1,81 +1,38 @@
 name: Push Draft OpenAPI Spec to APIHub
+#  This workflow pushes a draft version of the OpenAPI spec to APIHub.
+#  It is triggered by the `workflow_call` event and requires an API key and other inputs.
+#  The OpenAPI spec is expected to be downloaded as an artifact before this workflow runs.
 
 on:
-  push:
-    branches:
-      - main
-      - master
-
-env:
-  FILE_PATH_OPENAPI: "src/main/resources/openapi"
+  workflow_call:
+    secrets:
+      SWAGGERHUB_API_KEY:
+        required: true
+    inputs:
+      upload_artifact_name:
+        required: true
+        type: string
+      apihub_owner:
+        required: true
+        type: string
+      api_name:
+        required: true
+        type: string
+      api_version:
+        required: true
+        type: string
 
 jobs:
-  API-Version:
-    runs-on: ubuntu-latest
-    outputs:
-      artefact_version: ${{ steps.artefact.outputs.draft_version }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Generate Artefact Version
-        id: artefact
-        uses: hmcts/artefact-version-action@v1
-        with:
-          release: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  Apply-Version-to-API-Spec:
-    needs: [API-Version]
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Find OpenAPI file
-        id: find_spec
-        run: |
-          FILE=$(find "${FILE_PATH_OPENAPI}" -name "*.openapi.yml" | head -n 1)
-          if [ -z "$FILE" ]; then
-            echo "⚠️ *** No OpenAPI spec (*.openapi.yml) found. Skipping publishing draft. ***"
-            exit 1
-          fi
-          echo "openapi_file=$FILE" >> $GITHUB_OUTPUT
-
-      - name: Update info.version in OpenAPI spec using yq
-        env:
-          API_NAME: ${{ github.event.repository.name }}
-          API_VERSION: ${{ needs.API-Version.outputs.artefact_version }}
-        uses: mikefarah/yq@v4.45.4
-        with:
-          cmd: |
-            yq '
-              .info.version = strenv(API_VERSION) |
-              .servers[0].url = "https://virtserver.swaggerhub.com/HMCTS-DTS/" + strenv(API_NAME) + "/" + strenv(API_VERSION)
-            ' "${{ steps.find_spec.outputs.openapi_file }}" > openapi-versioned.yml
-
-      - name: Upload updated OpenAPI file
-        uses: actions/upload-artifact@v4
-        with:
-          name: updated-openapi-spec
-          path: openapi-versioned.yml
-
   Push-API-to-APIHub:
-    needs: [API-Version, Apply-Version-to-API-Spec]
     runs-on: ubuntu-latest
     env:
-      SWAGGERHUB_API_KEY: ${{ secrets.APIHUB_API_KEY }}
-
+      SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}
     steps:
       - name: Download versioned OpenAPI spec
         uses: actions/download-artifact@v4
         with:
-          name: updated-openapi-spec
-          path: ./
+          name: ${{ inputs.upload_artifact_name }}
+          path: ./${{ inputs.api_version }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -85,20 +42,27 @@ jobs:
 
       - name: Set CLI_API_REF env var
         env:
-          SWAGGERHUB_API_KEY: ${{ secrets.APIHUB_API_KEY }}
-          APIHUB_OWNER: ${{ vars.APIHUB_ORGANISATION }}
-          API_NAME: ${{ github.event.repository.name }}
-          API_VERSION: ${{ needs.API-Version.outputs.artefact_version }}
+          APIHUB_OWNER: ${{ inputs.apihub_owner }}
+          API_NAME: ${{ inputs.api_name }}
+          API_VERSION: ${{ inputs.api_version }}
         run: |
           echo "CLI_API_REF=${APIHUB_OWNER}/${API_NAME}/${API_VERSION}" >> "$GITHUB_ENV"
 
-      - name: Push API definition into API Hub (UNPUBLISHED)
-        # https://github.com/SmartBear/swaggerhub-cli?tab=readme-ov-file#swaggerhub-apicreate
+      - name: Find OpenAPI file
+        id: find_spec
         run: |
-          swaggerhub api:create "${CLI_API_REF}" --file openapi-versioned.yml --visibility public
+          FILE=$(find ./${{ inputs.api_version }} -type f -name "*.yml" | head -n 1)
+          echo "openapi_spec_file=$FILE" >> "$GITHUB_OUTPUT"
 
+      # https://github.com/SmartBear/swaggerhub-cli?tab=readme-ov-file#swaggerhub-apicreate
+      - name: Push API definition into API Hub (UNPUBLISHED)
+        env:
+          OPENAPI_SPEC_FILE: ${{ steps.find_spec.outputs.openapi_spec_file }}
+        run: |
+          swaggerhub api:create "${CLI_API_REF}" --file "${OPENAPI_SPEC_FILE}" --visibility public
+
+      # https://github.com/SmartBear/swaggerhub-cli?tab=readme-ov-file#swaggerhub-apiget
       - name: Check the API definition exists
-        # https://github.com/SmartBear/swaggerhub-cli?tab=readme-ov-file#swaggerhub-apiget
         run: |
           set -o pipefail
           if ! swaggerhub api:get "${CLI_API_REF}" 2>&1 | tee error.log; then
@@ -108,8 +72,8 @@ jobs:
             exit 1
           fi
 
+      # https://github.com/SmartBear/swaggerhub-cli?tab=readme-ov-file#swaggerhub-apivalidate
       - name: Validate definition
-        # https://github.com/SmartBear/swaggerhub-cli?tab=readme-ov-file#swaggerhub-apivalidate
         run: |
           set -o pipefail
           if ! swaggerhub api:validate "${CLI_API_REF}" 2>&1 | tee error.log; then

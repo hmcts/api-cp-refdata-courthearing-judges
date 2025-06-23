@@ -21,8 +21,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Generate Artefact Version
         id: artefact
@@ -36,42 +34,18 @@ jobs:
     needs: [Artefact-Version]
     runs-on: ubuntu-latest
     outputs:
-      openapi_file: ${{ steps.find_spec.outputs.openapi_file }}
+      openapi_file: ${{ steps.update_spec.outputs.openapi_file }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Find OpenAPI file
-        id: find_spec
-        run: |
-          FILE=$(find "${FILE_PATH_OPENAPI}" -name "*.openapi.yml" | head -n 1)
-          if [ -z "$FILE" ]; then
-            echo "⚠️ *** No OpenAPI spec (*.openapi.yml) found. Skipping publishing draft. ***"
-            exit 1
-          fi
-          echo "openapi_file=$FILE" >> $GITHUB_OUTPUT
-
-      - name: Update info.version in OpenAPI spec using yq
-        env:
-          API_ORG: HMCTS-DTS
-          API_NAME: ${{ github.event.repository.name }}
-          API_VERSION: ${{ needs.Artefact-Version.outputs.artefact_version }}
-        uses: mikefarah/yq@v4.45.4
+      - name: Update OpenAPI Spec Version
+        id: update_spec
+        uses: hmcts/update-openapi-version@main
         with:
-          cmd: |
-            yq '
-              .info.version = strenv(API_VERSION) |
-              .servers[0].url = "https://virtserver.swaggerhub.com/" + strenv(API_ORG) + "/" + strenv(API_NAME) + "/" + strenv(API_VERSION)
-            ' "${{ steps.find_spec.outputs.openapi_file }}" > openapi-versioned.yml
-
-      - name: Replace original OpenAPI file
-        run: mv openapi-versioned.yml "${{ steps.find_spec.outputs.openapi_file }}"
-
-      - name: Upload updated OpenAPI file
-        uses: actions/upload-artifact@v4
-        with:
-          name: updated-openapi-spec
-          path: ${{ steps.find_spec.outputs.openapi_file }}
+          openapi_path: ${{ env.FILE_PATH_OPENAPI }}
+          api_name: ${{ github.event.repository.name }}
+          api_version: ${{ needs.Artefact-Version.outputs.artefact_version }}
 
   Test:
     name: Test - Java ${{ matrix.java }}

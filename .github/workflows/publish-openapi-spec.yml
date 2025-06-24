@@ -1,7 +1,4 @@
-name: Push Draft OpenAPI Spec to APIHub
-#  This workflow pushes a draft version of the OpenAPI spec to APIHub.
-#  It is triggered by the `workflow_call` event and requires an API key and other inputs.
-#  The OpenAPI spec is expected to be downloaded as an artifact before this workflow runs.
+name: Publish OpenAPI Spec to APIHub
 
 on:
   workflow_call:
@@ -21,6 +18,10 @@ on:
       api_version:
         required: true
         type: string
+      is_release:
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   Push-API-to-APIHub:
@@ -55,11 +56,17 @@ jobs:
           echo "openapi_spec_file=$FILE" >> "$GITHUB_OUTPUT"
 
       # https://github.com/SmartBear/swaggerhub-cli?tab=readme-ov-file#swaggerhub-apicreate
-      - name: Push API definition into API Hub (UNPUBLISHED)
+      - name: Push API definition into API Hub (PUBLISHED)
         env:
           OPENAPI_SPEC_FILE: ${{ steps.find_spec.outputs.openapi_spec_file }}
         run: |
-          swaggerhub api:create "${CLI_API_REF}" --file "${OPENAPI_SPEC_FILE}" --visibility public
+          if [[ "${{ inputs.is_release }}" == "true" ]]; then
+            echo "PUBLIC: Publishing the RELEASED API to SwaggerHub"
+            swaggerhub api:create "${CLI_API_REF}" --file "${OPENAPI_SPEC_FILE}" --published publish --visibility public
+          else
+            echo "PRIVATE: Publishing the DRAFT API to SwaggerHub"
+            swaggerhub api:create "${CLI_API_REF}" --file "${OPENAPI_SPEC_FILE}" --visibility private
+          fi
 
       # https://github.com/SmartBear/swaggerhub-cli?tab=readme-ov-file#swaggerhub-apiget
       - name: Check the API definition exists
@@ -82,3 +89,9 @@ jobs:
             cat error.log
             exit 1
           fi
+
+        # https://github.com/SmartBear/swaggerhub-cli?tab=readme-ov-file#swaggerhub-apisetdefault
+      - name: Set released version to the default API Definition
+        if: inputs.is_release == true
+        run: |
+          swaggerhub api:setdefault "${CLI_API_REF}"

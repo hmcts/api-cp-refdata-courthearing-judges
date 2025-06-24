@@ -46,7 +46,7 @@ jobs:
           api_version: ${{ needs.Artefact-Version.outputs.artefact_version }}
 
   Push-Release-OpenAPI-Spec:
-    needs: [ Update-Spec-Version ]
+    needs: [ Artefact-Version, Update-Spec-Version ]
     uses: ./.github/workflows/publish-openapi-spec.yml
     secrets:
       SWAGGERHUB_API_KEY: ${{ secrets.APIHUB_API_KEY }}
@@ -58,7 +58,7 @@ jobs:
       is_release: true
 
   Build:
-    needs: [ Update-Spec-Version ]
+    needs: [ Artefact-Version, Push-Release-OpenAPI-Spec ]
     runs-on: ubuntu-latest
 
     steps:
@@ -89,7 +89,12 @@ jobs:
           AZURE_DEVOPS_ARTIFACT_USERNAME: ${{ secrets.AZURE_DEVOPS_ARTIFACT_USERNAME }}
           AZURE_DEVOPS_ARTIFACT_TOKEN: ${{ secrets.AZURE_DEVOPS_ARTIFACT_TOKEN }}
         run: |
-          echo "Publishing artefact for ARTEFACT_VERSION=$ARTEFACT_VERSION"
+          if [ -z "$ARTEFACT_VERSION" ]; then
+            echo "❌ ERROR: ARTEFACT_VERSION is empty. Publishing cannot proceed."
+            exit 1
+          else
+            echo "✅ Publishing artefact for ARTEFACT_VERSION=$ARTEFACT_VERSION"
+          fi
 
           gradle publish \
               -DAPI_SPEC_VERSION=$ARTEFACT_VERSION \

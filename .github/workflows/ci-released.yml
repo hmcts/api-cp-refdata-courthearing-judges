@@ -46,7 +46,7 @@ jobs:
           api_version: ${{ needs.Artefact-Version.outputs.artefact_version }}
 
   Push-Release-OpenAPI-Spec:
-    needs: [ Artefact-Version ]
+    needs: [ Update-Spec-Version ]
     uses: ./.github/workflows/publish-openapi-spec.yml
     secrets:
       SWAGGERHUB_API_KEY: ${{ secrets.APIHUB_API_KEY }}
@@ -58,7 +58,7 @@ jobs:
       is_release: true
 
   Build:
-    needs: [Update-Spec-Version]
+    needs: [ Update-Spec-Version ]
     runs-on: ubuntu-latest
 
     steps:

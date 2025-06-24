@@ -48,6 +48,7 @@ jobs:
           API_VERSION: ${{ inputs.api_version }}
         run: |
           echo "CLI_API_REF=${APIHUB_OWNER}/${API_NAME}/${API_VERSION}" >> "$GITHUB_ENV"
+          echo "Using CLI_API_REF=${CLI_API_REF}"
 
       - name: Find OpenAPI file
         id: find_spec
@@ -92,6 +93,6 @@ jobs:
 
         # https://github.com/SmartBear/swaggerhub-cli?tab=readme-ov-file#swaggerhub-apisetdefault
       - name: Set released version to the default API Definition
-        if: inputs.is_release == true
+        if: inputs.is_release
         run: |
           swaggerhub api:setdefault "${CLI_API_REF}"

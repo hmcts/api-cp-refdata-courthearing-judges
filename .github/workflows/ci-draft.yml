@@ -87,7 +87,7 @@ jobs:
           gradle build -DAPI_SPEC_VERSION=$ARTEFACT_VERSION
 
   Push-Draft-OpenAPI-Spec:
-    needs: [Test]
+    needs: [ Test ]
     uses: ./.github/workflows/publish-openapi-spec.yml
     secrets:
       SWAGGERHUB_API_KEY: ${{ secrets.APIHUB_API_KEY }}

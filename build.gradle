@@ -105,9 +105,13 @@ repositories {
 publishing {
   publications {
     mavenJava(MavenPublication) {
-      from components.java
-
+      if (!project.hasProperty("classifier")) {
+        from components.java
+      }
+    }
+    mavenJavaClassifier(MavenPublication) {
       if (project.hasProperty("classifier")) {
+        from components.java
         artifactId = "${project.name}-${project.property("classifier")}"
       }
     }

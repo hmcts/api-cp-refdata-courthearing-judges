@@ -112,7 +112,7 @@ publishing {
     mavenJavaClassifier(MavenPublication) {
       if (project.hasProperty("classifier")) {
         from components.java
-        artifactId = "${project.name}-${project.property("classifier")}"
+        artifactId = "${project.name}-${project.findProperty("classifier")}"
       }
     }
   }

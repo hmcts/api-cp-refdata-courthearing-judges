@@ -134,7 +134,7 @@ jobs:
           JAVA_VERSION: ${{ matrix.java }}
         run: |
           echo "Publishing artefact for ARTEFACT_VERSION=$ARTEFACT_VERSION using Java $JAVA_VERSION"
-          if [[ "${{ matrix.java }}" == "23" ]]; then
+          if [[ "${{ matrix.java }}" == "21" ]]; then
             echo "Publishing DEFAULT Java $JAVA_VERSION artefact"
             gradle build -x test publish \
               -DAPI_SPEC_VERSION=$ARTEFACT_VERSION \
@@ -144,13 +144,13 @@ jobs:
               -DAZURE_DEVOPS_ARTIFACT_USERNAME=$AZURE_DEVOPS_ARTIFACT_USERNAME \
               -DAZURE_DEVOPS_ARTIFACT_TOKEN=$AZURE_DEVOPS_ARTIFACT_TOKEN
           fi
-          
-          echo "Publishing CLASSIFIER Java $JAVA_VERSION artefact"
-          gradle build -x test publish \
-            -DAPI_SPEC_VERSION=$ARTEFACT_VERSION \
-            -Dclassifier=java${{ matrix.java }} \
-            -DGITHUB_REPOSITORY=${{ github.repository }} \
-            -DGITHUB_ACTOR=${{ github.actor }} \
-            -DGITHUB_TOKEN=$GITHUB_TOKEN \
-            -DAZURE_DEVOPS_ARTIFACT_USERNAME=$AZURE_DEVOPS_ARTIFACT_USERNAME \
-            -DAZURE_DEVOPS_ARTIFACT_TOKEN=$AZURE_DEVOPS_ARTIFACT_TOKEN
+#          TEMP commented out code for CLASSIFIER Java artefact
+#          echo "Publishing CLASSIFIER Java $JAVA_VERSION artefact"
+#          gradle build -x test publish \
+#            -DAPI_SPEC_VERSION=$ARTEFACT_VERSION \
+#            -Dclassifier=java${{ matrix.java }} \
+#            -DGITHUB_REPOSITORY=${{ github.repository }} \
+#            -DGITHUB_ACTOR=${{ github.actor }} \
+#            -DGITHUB_TOKEN=$GITHUB_TOKEN \
+#            -DAZURE_DEVOPS_ARTIFACT_USERNAME=$AZURE_DEVOPS_ARTIFACT_USERNAME \
+#            -DAZURE_DEVOPS_ARTIFACT_TOKEN=$AZURE_DEVOPS_ARTIFACT_TOKEN

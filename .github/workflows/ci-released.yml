@@ -58,8 +58,12 @@ jobs:
       is_release: true
 
   Build:
+    name: Build and Publish - Java ${{ matrix.java }}
     needs: [ Artefact-Version, Push-Release-OpenAPI-Spec ]
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [21, 23]
 
     steps:
       - name: Checkout source code
@@ -69,7 +73,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: 23
+          java-version: ${{ matrix.java }}
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -88,18 +92,32 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           AZURE_DEVOPS_ARTIFACT_USERNAME: ${{ secrets.AZURE_DEVOPS_ARTIFACT_USERNAME }}
           AZURE_DEVOPS_ARTIFACT_TOKEN: ${{ secrets.AZURE_DEVOPS_ARTIFACT_TOKEN }}
+          JAVA_VERSION: ${{ matrix.java }}
         run: |
           if [ -z "$ARTEFACT_VERSION" ]; then
             echo "❌ ERROR: ARTEFACT_VERSION is empty. Publishing cannot proceed."
             exit 1
           else
-            echo "✅ Publishing artefact for ARTEFACT_VERSION=$ARTEFACT_VERSION"
+            echo "✅ Publishing artefact for ARTEFACT_VERSION=$ARTEFACT_VERSION using Java $JAVA_VERSION"
           fi
 
-          gradle publish \
+          if [[ "${{ matrix.java }}" == "23" ]]; then
+            echo "Publishing DEFAULT Java $JAVA_VERSION artefact"
+            gradle build -x test publish \
               -DAPI_SPEC_VERSION=$ARTEFACT_VERSION \
               -DGITHUB_REPOSITORY=${{ github.repository }} \
               -DGITHUB_ACTOR=${{ github.actor }} \
               -DGITHUB_TOKEN=$GITHUB_TOKEN \
               -DAZURE_DEVOPS_ARTIFACT_USERNAME=$AZURE_DEVOPS_ARTIFACT_USERNAME \
               -DAZURE_DEVOPS_ARTIFACT_TOKEN=$AZURE_DEVOPS_ARTIFACT_TOKEN
+          fi
+
+          echo "Publishing CLASSIFIER Java $JAVA_VERSION artefact"
+          gradle build -x test publish \
+            -DAPI_SPEC_VERSION=$ARTEFACT_VERSION \
+            -Dclassifier=java${{ matrix.java }} \
+            -DGITHUB_REPOSITORY=${{ github.repository }} \
+            -DGITHUB_ACTOR=${{ github.actor }} \
+            -DGITHUB_TOKEN=$GITHUB_TOKEN \
+            -DAZURE_DEVOPS_ARTIFACT_USERNAME=$AZURE_DEVOPS_ARTIFACT_USERNAME \
+            -DAZURE_DEVOPS_ARTIFACT_TOKEN=$AZURE_DEVOPS_ARTIFACT_TOKEN

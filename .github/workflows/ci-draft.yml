@@ -35,6 +35,9 @@ jobs:
   Update-Spec-Version:
     needs: [Artefact-Version]
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      attestations: write
     outputs:
       upload_artifact_name: ${{ steps.update_spec.outputs.upload_artifact_name }}
     steps:
@@ -101,6 +104,9 @@ jobs:
     name: Publish Artefact - Java ${{ matrix.java }}
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      attestations: write
     needs: [Artefact-Version, Push-Draft-OpenAPI-Spec]
     strategy:
       matrix:
@@ -142,3 +148,8 @@ jobs:
             -DGITHUB_TOKEN=$GITHUB_TOKEN \
             -DAZURE_DEVOPS_ARTIFACT_USERNAME=$AZURE_DEVOPS_ARTIFACT_USERNAME \
             -DAZURE_DEVOPS_ARTIFACT_TOKEN=$AZURE_DEVOPS_ARTIFACT_TOKEN
+
+      - name: Attest
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: '${{ github.workspace }}/build/libs/*'
